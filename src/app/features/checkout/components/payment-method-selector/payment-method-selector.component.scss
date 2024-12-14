@@ -1,0 +1,19 @@
+.payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  @media (min-width: 768px) {
+    .payment-methods {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .payment-methods {
+      gap: 24px;
+    }
+  }
+  

@@ -1,0 +1,17 @@
+.wizard-content {
+  height: 400px; /* Fixed height */
+  overflow-y: auto; /* Enable scrolling for content that exceeds the height */
+  padding: 16px;
+}
+
+.wizard-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (min-width: 768px) {
+  .wizard-content {
+    height: 500px; /* Adjust height for larger screens */
+  }
+}

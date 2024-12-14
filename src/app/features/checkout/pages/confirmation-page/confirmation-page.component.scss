@@ -1,0 +1,40 @@
+.confirmation-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .summary {
+    margin-top: 16px;
+  
+    p {
+      font-size: 16px;
+      margin: 4px 0;
+    }
+  
+    strong {
+      font-size: 18px;
+    }
+  }
+  
+  button {
+    margin-top: 16px;
+  }
+  
+  
+  @media (min-width: 768px) {
+    .confirmation-page {
+      gap: 24px;
+      align-items: center;
+      text-align: center;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .confirmation-page {
+      max-width: 600px;
+      margin: 0 auto;
+      gap: 32px;
+    }
+  }
+  

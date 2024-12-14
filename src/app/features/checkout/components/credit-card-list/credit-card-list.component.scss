@@ -1,0 +1,15 @@
+.credit-card-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .credit-card-details {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .credit-card-actions button {
+    margin-left: 8px;
+  }
+  
