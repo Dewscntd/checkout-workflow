@@ -4,7 +4,6 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { CommonModule } from '@angular/common';
 import { CreditCard } from '../../../../core/models/payment.types';
-
 @Component({
   selector: 'app-credit-card-list',
   template: `
@@ -27,7 +26,7 @@ import { CreditCard } from '../../../../core/models/payment.types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [NzListModule, NzButtonModule, CommonModule],
-  styleUrl: './credit-card-list.component.scss'
+  styleUrls: ['./credit-card-list.component.scss']
 })
 export class CreditCardListComponent {
     @Input() creditCards: CreditCard[] | null = [];
@@ -55,4 +54,4 @@ export class CreditCardListComponent {
       const last4 = cardNumber.slice(-4);
       return `**** **** **** ${last4}`;
     }
-  }
+}

@@ -39,33 +39,34 @@ export abstract class BaseStore<T extends BaseState> {
     }
   }
 
-  public apiProcedure<R>(
-    key: string,
-    procedure: Observable<R>,
-    onSuccess: (result: R, state: T) => Partial<T>,
-    onError?: (error: Error, state: T) => Partial<T>
-  ): void {
-    // Use a function updater with type assertion
-    this.updateState((state: T): Partial<T> => ({
-      loading: { ...state.loading, [key]: true },
-      error: null, // Explicitly set to null
-    }) as Partial<T>); // Type assertion added here
+public apiProcedure<R>(
+  key: string,
+  procedure: Observable<R>,
+  onSuccess: (result: R, state: T) => Partial<T>,
+  onError?: (error: Error, state: T) => Partial<T>
+): void {
+  // Use a function updater with type assertion
+  this.updateState((state: T): Partial<T> => ({
+    loading: { ...state.loading, [key]: true },
+    error: null, // Explicitly set to null
+  }) as Partial<T>);
 
-    procedure.subscribe({
-      next: (result) => {
-        this.updateState((state: T): Partial<T> => {
-          const newState = onSuccess(result, state);
-          return { ...newState, loading: { ...state.loading, [key]: false } } as Partial<T>; // Type assertion added here
-        });
-      },
-      error: (err: Error) => { // Ensure 'err' is of type 'Error'
-        this.updateState((state: T): Partial<T> => {
-          const newState = onError
-            ? onError(err, state)
-            : { error: err.message || 'An error occurred.' };
-          return { ...newState, loading: { ...state.loading, [key]: false } } as Partial<T>; // Type assertion added here
-        });
-      },
-    });
-  }
+  procedure.subscribe({
+    next: (result) => {
+      this.updateState((state: T): Partial<T> => {
+        const newState = onSuccess(result, state);
+        return { ...newState, loading: { ...state.loading, [key]: false } } as Partial<T>;
+      });
+    },
+    error: (err: Error) => { // Ensure 'err' is of type 'Error'
+      this.updateState((state: T): Partial<T> => {
+        const newState = onError
+          ? onError(err, state)
+          : { error: err.message || 'An error occurred.' };
+        return { ...newState, loading: { ...state.loading, [key]: false } } as Partial<T>;
+      });
+    },
+  });
+}
+
 }

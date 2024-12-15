@@ -9,6 +9,7 @@ import { Address } from '../../../../core/models/address.types';
 import { CheckoutFacadeService } from '../../services/checkout-facade.service';
 import { AddAddressModalService } from '../../components/add-address-modal/add-address-modal.service';
 import { CommonModule } from '@angular/common';
+import { NzMessageModule, NzMessageService } from 'ng-zorro-antd/message';
 
 @Component({
   selector: 'app-shipping-page',
@@ -29,7 +30,7 @@ import { CommonModule } from '@angular/common';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [ReactiveFormsModule, NzRadioModule, NzButtonModule, NzAlertModule, CommonModule],
+  imports: [ReactiveFormsModule, NzRadioModule, NzButtonModule, NzAlertModule, CommonModule, NzMessageModule],
 })
 export class ShippingPageComponent implements OnInit, OnDestroy {
   shippingForm: FormGroup;
@@ -41,7 +42,8 @@ export class ShippingPageComponent implements OnInit, OnDestroy {
   constructor(
     private facade: CheckoutFacadeService,
     private fb: FormBuilder,
-    private addAddressModalService: AddAddressModalService
+    private addAddressModalService: AddAddressModalService,
+    private message: NzMessageService 
   ) {
     this.shippingForm = this.fb.group({
       selectedAddressId: [null, Validators.required],
@@ -49,25 +51,29 @@ export class ShippingPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Remove unnecessary subscribe since facade methods handle state updates
-    // this.facade.getAddresses().pipe(takeUntil(this.destroy$)).subscribe();
+    this.facade.loadAddresses();
 
     this.shippingForm
       .get('selectedAddressId')!
       .valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((addressId) => {
         this.facade.selectAddress(addressId);
+        this.message.success('Shipping address selected.');
       });
   }
+openAddAddressModal(): void {
+  this.addAddressModalService.open().pipe(takeUntil(this.destroy$)).subscribe({
+    next: () => {
+      this.facade.loadAddresses();
+      this.message.success('Address added successfully.');
+    },
+    error: (err) => {
+      console.error('Failed to add address:', err);
+      this.message.error('Failed to add address. Please try again.');
+    },
+  });
+}
 
-  openAddAddressModal(): void {
-    this.addAddressModalService.open().pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => {
-        this.facade.loadAddresses();
-      },
-      error: (err) => console.error('Failed to add address:', err),
-    });
-  }
 
   formatAddress(address: Address): string {
     return `${address.addressLine1}, ${address.addressLine2 || ''}, ${address.city}, ${address.state}, ${address.country} - ${address.zipCode}`;

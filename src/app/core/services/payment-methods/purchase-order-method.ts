@@ -1,13 +1,14 @@
-import { PaymentMethodStrategy } from '../../models/payment.types';
-import { PaymentApiService } from '../api/payment-api.service';
-import { Observable } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { PaymentStrategy } from './payment.strategy';
 
-export class PurchaseOrderMethod implements PaymentMethodStrategy {
-  method = 'PurchaseOrder';
+@Injectable({ providedIn: 'root' })
+export class PurchaseOrderStrategy implements PaymentStrategy {
+  method = 'Purchase Order';
 
-  constructor(private paymentApi: PaymentApiService) {}
+  constructor() {}
 
-  select(data: { purchaseOrderNumber: string }): Observable<any> {
-    return this.paymentApi.selectPurchaseOrder(data.purchaseOrderNumber);
+  select(extraData?: any): Observable<void> {
+    return of(undefined); // Placeholder
   }
 }

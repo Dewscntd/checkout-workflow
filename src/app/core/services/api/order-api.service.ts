@@ -6,9 +6,14 @@ import { API_BASE_URL } from '../../../../environment/environment';
 
 @Injectable({ providedIn: 'root' })
 export class OrderApiService {
-  constructor(@Inject(API_BASE_URL) private baseUrl: string ,private http: HttpClient) {}
+  private endpoint = `${this.baseUrl}/api/Order`; // Append /api/Order
+
+  constructor(
+    @Inject(API_BASE_URL) private baseUrl: string,
+    private http: HttpClient
+  ) {}
 
   placeOrder(orderData: PlaceOrderDto): Observable<Order> {
-    return this.http.post<Order>(this.baseUrl, orderData);
+    return this.http.post<Order>(this.endpoint, orderData);
   }
 }

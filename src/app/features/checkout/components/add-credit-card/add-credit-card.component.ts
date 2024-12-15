@@ -1,106 +1,95 @@
-import { Component, Output, EventEmitter, ChangeDetectionStrategy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Component, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AddCreditCardDto } from '../../../../core/models/payment.types';
+import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
-import { NzButtonModule } from 'ng-zorro-antd/button';
 import { CommonModule } from '@angular/common';
-import { AddCreditCardDto } from '../../../../core/models/payment.types';
 
 @Component({
   selector: 'app-add-credit-card',
   template: `
-    <form [formGroup]="cardForm" (ngSubmit)="onSubmit()">
+    <form [formGroup]="creditCardForm" (ngSubmit)="submitForm()">
       <nz-form-item>
-        <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="cardHolderName">Card Holder Name</nz-form-label>
-        <nz-form-control [nzSm]="14" [nzXs]="24">
+        <nz-form-label [nzSpan]="6" nzFor="cardHolderName">Card Holder Name</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input the card holder name!">
           <input nz-input formControlName="cardHolderName" id="cardHolderName" />
-          <nz-form-text *ngIf="cardForm.get('cardHolderName')?.dirty && cardForm.get('cardHolderName')?.errors">
-            Please enter the card holder's name.
-          </nz-form-text>
         </nz-form-control>
       </nz-form-item>
 
       <nz-form-item>
-        <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="cardNumber">Card Number</nz-form-label>
-        <nz-form-control [nzSm]="14" [nzXs]="24">
-          <input nz-input formControlName="cardNumber" id="cardNumber" maxlength="16" />
-          <nz-form-text *ngIf="cardForm.get('cardNumber')?.dirty && cardForm.get('cardNumber')?.errors">
-            Please enter a valid 16-digit card number.
-          </nz-form-text>
+        <nz-form-label [nzSpan]="6" nzFor="cardNumber">Card Number</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input a valid card number!">
+          <input nz-input formControlName="cardNumber" id="cardNumber" />
         </nz-form-control>
       </nz-form-item>
 
       <nz-form-item>
-        <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="expiryMonth">Expiry Month</nz-form-label>
-        <nz-form-control [nzSm]="14" [nzXs]="24">
-          <input nz-input formControlName="expiryMonth" id="expiryMonth" maxlength="2" />
-          <nz-form-text *ngIf="cardForm.get('expiryMonth')?.dirty && cardForm.get('expiryMonth')?.errors">
-            Please enter a valid month (01-12).
-          </nz-form-text>
+        <nz-form-label [nzSpan]="6" nzFor="expiryMonth">Expiry Month</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input the expiry month!">
+          <input nz-input formControlName="expiryMonth" id="expiryMonth" />
         </nz-form-control>
       </nz-form-item>
 
       <nz-form-item>
-        <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="expiryYear">Expiry Year</nz-form-label>
-        <nz-form-control [nzSm]="14" [nzXs]="24">
-          <input nz-input formControlName="expiryYear" id="expiryYear" maxlength="4" />
-          <nz-form-text *ngIf="cardForm.get('expiryYear')?.dirty && cardForm.get('expiryYear')?.errors">
-            Please enter a valid 4-digit year.
-          </nz-form-text>
+        <nz-form-label [nzSpan]="6" nzFor="expiryYear">Expiry Year</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input the expiry year!">
+          <input nz-input formControlName="expiryYear" id="expiryYear" />
         </nz-form-control>
       </nz-form-item>
 
       <nz-form-item>
-        <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="cvv">CVV</nz-form-label>
-        <nz-form-control [nzSm]="14" [nzXs]="24">
-          <input nz-input formControlName="cvv" id="cvv" maxlength="3" />
-          <nz-form-text *ngIf="cardForm.get('cvv')?.dirty && cardForm.get('cvv')?.errors">
-            Please enter a valid 3-digit CVV.
-          </nz-form-text>
-        </nz-form-control>
-      </nz-form-item>
-
-      <nz-form-item>
-        <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="saved">Save Card</nz-form-label>
-        <nz-form-control [nzSm]="14" [nzXs]="24">
-          <label nz-checkbox formControlName="saved">Yes, save this card for future use</label>
+        <nz-form-label [nzSpan]="6" nzFor="cvc">CVC</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input the CVC!">
+          <input nz-input formControlName="cvc" id="cvc" />
         </nz-form-control>
       </nz-form-item>
 
       <div style="text-align: right;">
-        <button nz-button nzType="primary" [disabled]="cardForm.invalid">Add Card</button>
+        <button nz-button nzType="default" type="button" (click)="cancel()">Cancel</button>
+        <button nz-button nzType="primary" [disabled]="!creditCardForm.valid">Add</button>
       </div>
     </form>
   `,
-  styleUrl: './add-credit-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [ReactiveFormsModule, NzFormModule, NzInputModule, NzButtonModule, CommonModule],
+  imports: [NzButtonModule, NzFormModule, NzInputModule, CommonModule, ReactiveFormsModule],
+  styles: [`
+    /* Add your styles here if necessary */
+  `]
 })
-export class AddCreditCardComponent implements OnInit {
- @Output() add = new EventEmitter<AddCreditCardDto>();
+export class AddCreditCardComponent {
+  @Output() add = new EventEmitter<AddCreditCardDto>();
+  @Output() cancelSelection = new EventEmitter<void>(); // Added Output
 
-  cardForm: FormGroup;
+  creditCardForm: FormGroup;
 
   constructor(private fb: FormBuilder) {
-    this.cardForm = this.fb.group({
+    this.creditCardForm = this.fb.group({
       cardHolderName: ['', Validators.required],
       cardNumber: ['', [Validators.required, Validators.pattern(/^\d{16}$/)]],
       expiryMonth: ['', [Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])$/)]],
       expiryYear: ['', [Validators.required, Validators.pattern(/^\d{4}$/)]],
-      cvv: ['', [Validators.required, Validators.pattern(/^\d{3}$/)]],
-      saved: [false],
+      cvc: ['', [Validators.required, Validators.pattern(/^\d{3}$/)]],
     });
   }
 
-  ngOnInit(): void {}
-
-  onSubmit(): void {
-    if (this.cardForm.valid) {
-      const cardData: AddCreditCardDto = this.cardForm.value;
-      
-      this.add.emit(cardData);
-      this.cardForm.reset({ saved: false });
-     }
+  submitForm(): void {
+    if (this.creditCardForm.valid) {
+      const formValue = this.creditCardForm.value;
+      const newCard: AddCreditCardDto = {
+        cardHolderName: formValue.cardHolderName,
+        cardNumber: formValue.cardNumber,
+        expiryMonth: formValue.expiryMonth,
+        expiryYear: formValue.expiryYear,
+        cvv: formValue.cvv,
+        saved: true
+      };
+      this.add.emit(newCard);
     }
+  }
+
+  cancel(): void {
+    this.cancelSelection.emit(); // Emit the cancel event
+  }
 }

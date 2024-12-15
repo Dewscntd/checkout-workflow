@@ -1,16 +1,11 @@
 import { FormControl } from "@angular/forms";
 import { Observable } from "rxjs";
 
-// export interface CreditCard {
-//   id?: string;
-//   cardNumber?: string;
-//   expiryMonth?: string;
-//   expiryYear?: string;
-//   cvv?: string;
-//   cardHolderName?: string;
-//   saved: boolean;
-// }
-
+export enum PaymentMethod {
+  CreditCard = 'CreditCard',
+  PurchaseOrder = 'PurchaseOrder',
+  PayPal = 'PayPal',
+}
   export interface PayPalAccount {
     id: string;
     paypalAccountId: string;

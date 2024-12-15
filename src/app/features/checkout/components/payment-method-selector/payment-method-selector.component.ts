@@ -1,13 +1,14 @@
-import { Component, Output, EventEmitter, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { CommonModule } from '@angular/common';
+import { PaymentMethod } from '../../../../core/models/payment.types';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-payment-method-selector',
   template: `
-    <nz-radio-group [(ngModel)]="selectedMethod" (ngModelChange)="onSelectionChange($event)">
-      <label *ngFor="let method of paymentOptions" nz-radio nzValue="{{method}}">
+    <nz-radio-group [(ngModel)]="selectedMethod" (ngModelChange)="selectPaymentMethod($event)">
+      <label *ngFor="let method of paymentOptions" nz-radio-button [nzValue]="method">
         {{ method }}
       </label>
     </nz-radio-group>
@@ -17,12 +18,13 @@ import { FormsModule } from '@angular/forms';
   imports: [NzRadioModule, CommonModule, FormsModule],
 })
 export class PaymentMethodSelectorComponent {
-  @Input() paymentOptions: string[] = [];
-  @Output() paymentMethodSelected = new EventEmitter<{ method: string; data?: any }>();
+  @Input() paymentOptions: PaymentMethod[] = [];
+  @Output() paymentMethodSelected = new EventEmitter<{ method: PaymentMethod; data?: any }>();
 
-  selectedMethod: string | null = null;
+  selectedMethod: PaymentMethod | null = null;
 
-  onSelectionChange(method: string): void {
+  selectPaymentMethod(method: PaymentMethod): void {
+    console.log('PaymentMethodSelectorComponent: Payment Method Selected', method);
     this.paymentMethodSelected.emit({ method });
   }
 }

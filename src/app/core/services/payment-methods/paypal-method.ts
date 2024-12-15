@@ -1,13 +1,17 @@
-import { PaymentMethodStrategy } from '../../models/payment.types';
-import { PaymentApiService } from '../api/payment-api.service';
+import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-
-export class PayPalMethod implements PaymentMethodStrategy {
+import { map } from 'rxjs/operators';
+import { PaymentStrategy } from './payment.strategy';
+import { PaymentApiService } from '../api/payment-api.service';
+@Injectable({ providedIn: 'root' })
+export class PayPalStrategy implements PaymentStrategy {
   method = 'PayPal';
 
   constructor(private paymentApi: PaymentApiService) {}
 
-  select(data: { paypalAccountId: string }): Observable<any> {
-    return this.paymentApi.selectPayPalAccount(data.paypalAccountId);
+  select(data: { paypalAccountId: string }): Observable<void> {
+    return this.paymentApi.selectPayPalAccount(data.paypalAccountId).pipe(
+      map(() => undefined) // Convert to Observable<void>
+    );
   }
 }

@@ -1,67 +1,61 @@
-import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
-import { map } from 'rxjs/operators';
-import { AsyncPipe, NgIf, CurrencyPipe, NgFor } from '@angular/common';
-import { NzTableModule } from 'ng-zorro-antd/table';
-import { NzButtonModule } from 'ng-zorro-antd/button';
-import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, Input } from '@angular/core';
 import { CheckoutFacadeService } from '../../services/checkout-facade.service';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { AsyncPipe, NgIf } from '@angular/common';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil, map } from 'rxjs/operators';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-confirmation-page',
   template: `
-    <h2>Order Confirmation</h2>
+    <div *ngIf="(loading$ | async) as loading">
+      <nz-spin nzTip="Processing your order..." [nzSpinning]="loading">
+        <div *ngIf="!loading">
+          <h2>Order Confirmation</h2>
+          <nz-alert nzType="success" nzMessage="Your order has been placed successfully!" nzShowIcon></nz-alert>
+          <p>Your Order ID: {{ orderId }}</p>
+          <!-- Additional confirmation details can be added here -->
+        </div>
+      </nz-spin>
+    </div>
 
-    <nz-spin [nzSpinning]="loading$ | async">
-      <nz-table
-        *ngIf="(orderItems$ | async) as items"
-        [nzData]="items"
-        nzBordered
-        nzSize="middle"
-      >
-        <thead>
-          <tr>
-            <th nzWidth="30%">Product</th>
-            <th nzWidth="20%">Quantity</th>
-            <th nzWidth="20%">Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of items">
-            <td>{{ item.product.name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ (item.product.discountedPrice || item.product.price) | currency }}</td>
-          </tr>
-        </tbody>
-      </nz-table>
-
-      <div class="summary" *ngIf="order$ | async as order">
-        <p>Shipping: {{ order.shipping | currency }}</p>
-        <p>Tax: {{ order.tax | currency }}</p>
-        <p>Subtotal: {{ order.subtotal | currency }}</p>
-        <p><strong>Total: {{ order.total | currency }}</strong></p>
-      </div>
-
-      <button nz-button nzType="primary" (click)="placeOrder()" [disabled]="(loading$ | async)?.['placeOrder']">
-        Place Order
-      </button>
-    </nz-spin>
+    <div *ngIf="(error$ | async) as error">
+      <nz-alert nzType="error" [nzMessage]="error" nzShowIcon></nz-alert>
+    </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [AsyncPipe, NzSpinModule, NzTableModule, NzButtonModule, CurrencyPipe, NgIf, NgFor],
+  imports: [NzSpinModule, NzAlertModule, AsyncPipe, NgIf, CommonModule],
+  styles: [`
+    div {
+      margin: 24px;
+    }
+  `]
 })
-export class ConfirmationPageComponent implements OnInit {
-  order$ = this.facade.order$;
-  orderItems$ = this.facade.orderItems$;
-  loading$ = this.facade.loading$;
+export class ConfirmationPageComponent implements OnInit, OnDestroy {
+  @Input() orderId: string | null = null; // Receive orderId from the wizard
 
-  constructor(private facade: CheckoutFacadeService) {}
+  loading$: Observable<boolean>;
+  error$: Observable<string | null>;
 
-  ngOnInit(): void {
-    this.facade.loadOrderData(); // Previously loadCartData()
+  private destroy$ = new Subject<void>();
+
+  constructor(private facade: CheckoutFacadeService) {
+    // Map the loading state specifically for 'placeOrder'
+    this.loading$ = this.facade.loading$.pipe(
+      map(loading => loading['placeOrder'] || false)
+    );
+    this.error$ = this.facade.error$;
   }
 
-  placeOrder(): void {
-    this.facade.placeOrder();
+  ngOnInit(): void {
+    // Optionally, perform additional actions based on orderId
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
