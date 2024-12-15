@@ -28,7 +28,6 @@ export class CheckoutFacadeService {
     map(state => state.paymentOptions)
   );
 
-  // Derived Streams
   orderItems$: Observable<any[]> = this.order$.pipe(
     map(order => order?.items || [])
   );
@@ -45,17 +44,15 @@ export class CheckoutFacadeService {
     private paymentMethodFactory: PaymentMethodFactory
   ) {}
 
-  /**
-   * Load payment options and map them to PaymentMethod enums
-   */
+
   loadPaymentOptions(): void {
     this.store.apiProcedure(
       'loadPaymentOptions',
-      this.paymentApi.getPaymentOptions(), // returns Observable<string[]>
+      this.paymentApi.getPaymentOptions(),
       (options: string[], state) => ({
         paymentOptions: options
           .map(option => this.mapToPaymentMethod(option))
-          .filter((method): method is PaymentMethod => !!method) // Filters out undefined
+          .filter((method): method is PaymentMethod => !!method)
       }),
       (err, state) => ({
         error: `Failed to load payment options: ${err.message}` as string | null
@@ -63,11 +60,7 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Helper method to map string to PaymentMethod enum
-   */
   private mapToPaymentMethod(option: string): PaymentMethod | undefined {
-    console.log(`Mapping payment method: ${option}`);
     switch (option) {
       case 'CreditCard':
         return PaymentMethod.CreditCard;
@@ -75,20 +68,16 @@ export class CheckoutFacadeService {
         return PaymentMethod.PurchaseOrder;
       case 'PayPal':
         return PaymentMethod.PayPal;
-      // Add other mappings as needed
       default:
         console.warn(`Unknown payment method received: ${option}`);
         return undefined;
     }
   }
 
-  /**
-   * Load cart data into the state
-   */
   loadOrderData(): void {
     this.store.apiProcedure(
       'loadOrder',
-      this.cartApi.getCart(), // should return Observable<Order>
+      this.cartApi.getCart(),
       (order, state) => ({
         order,
         orderId: order.id
@@ -99,13 +88,10 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Apply a coupon to the cart
-   */
   applyCoupon(couponCode: string): void {
     this.store.apiProcedure(
       'applyCoupon',
-      this.cartApi.addCoupon(couponCode), // returns Observable<Order>
+      this.cartApi.addCoupon(couponCode),
       (updatedOrder: Order, state) => ({
         order: updatedOrder
       }),
@@ -115,30 +101,22 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Fetch saved credit cards
-   */
   getCreditCards(): Observable<CreditCard[]> {
     return this.paymentApi.getCreditCards().pipe(
       tap(cards => {
         this.store.setCreditCards(cards);
-        console.log('CheckoutFacadeService: Credit cards fetched', cards);
       }),
       catchError(err => {
         this.store.setError(`Failed to load credit cards: ${err.message}`);
-        console.error('CheckoutFacadeService: Error fetching credit cards', err);
         return of([]);
       })
     );
   }
 
-  /**
-   * Add a new credit card
-   */
-  addCreditCard(cardData: AddCreditCardDto): void { // Use AddCreditCardDto without 'id'
+  addCreditCard(cardData: AddCreditCardDto): void {
     this.store.apiProcedure(
       'addCreditCard',
-      this.paymentApi.addCreditCard(cardData), // returns Observable<CreditCard>
+      this.paymentApi.addCreditCard(cardData),
       (newCard: CreditCard, state) => ({
         creditCards: [...state.creditCards, newCard]
       }),
@@ -148,13 +126,10 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Delete a credit card
-   */
   deleteCreditCard(cardId: string): void {
     this.store.apiProcedure(
       'deleteCreditCard',
-      this.paymentApi.deleteCreditCard(cardId), // returns Observable<void>
+      this.paymentApi.deleteCreditCard(cardId),
       () => ({
         creditCards: this.store.currentState.creditCards.filter(card => card.id !== cardId)
       }),
@@ -164,9 +139,6 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Select a credit card as the payment method
-   */
   selectCreditCard(cardId: string): void {
     this.store.apiProcedure(
       'selectPaymentMethod',
@@ -181,9 +153,6 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Choose a payment method using a strategy pattern
-   */
   choosePaymentMethod(method: PaymentMethod, extraData?: any): void {
     const strategy: PaymentStrategy | null = this.paymentMethodFactory.create(method);
     if (!strategy) {
@@ -193,7 +162,7 @@ export class CheckoutFacadeService {
 
     this.store.apiProcedure(
       'selectPaymentMethod',
-      strategy.select(extraData), // returns Observable<void>
+      strategy.select(extraData),
       () => ({
         selectedPaymentMethod: method
       }),
@@ -203,13 +172,10 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Load addresses from API and update the store
-   */
   loadAddresses(): void {
     this.store.apiProcedure(
       'loadAddresses',
-      this.addressApi.getAddresses(), // returns Observable<Address[]>
+      this.addressApi.getAddresses(),
       (addresses: Address[], state) => ({
         addresses
       }),
@@ -219,13 +185,10 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Add a new address
-   */
   addAddress(addressData: Address): void {
     this.store.apiProcedure(
       'addAddress',
-      this.addressApi.addAddress(addressData), // Assuming this API exists and returns Observable<Address>
+      this.addressApi.addAddress(addressData),
       (newAddress: Address, state) => ({
         addresses: [...state.addresses, newAddress]
       }),
@@ -235,13 +198,10 @@ export class CheckoutFacadeService {
     );
   }
 
-  /**
-   * Select a shipping address
-   */
   selectAddress(addressId: string): void {
     this.store.apiProcedure(
       'selectAddress',
-      this.addressApi.selectAddressById(addressId), // returns Observable<void>
+      this.addressApi.selectAddressById(addressId),
       () => ({
         selectedAddressId: addressId
       }),
@@ -252,12 +212,9 @@ export class CheckoutFacadeService {
   }
 
   getAddresses(): Observable<Address[]> {
-    return this.addresses$; // Return the observable directly
+    return this.addresses$;
   }
 
-  /**
-   * Place an order
-   */
   placeOrder(): void {
     const state = this.store.currentState;
     if (
@@ -273,18 +230,16 @@ export class CheckoutFacadeService {
     const orderData: PlaceOrderDto = {
       cartId: state.order.id,
       addressId: state.selectedAddressId,
-      paymentMethod: state.selectedPaymentMethod, // 'CreditCard'
-      paymentInfoId: state.paymentInfoId, // 'cardId'
+      paymentMethod: state.selectedPaymentMethod,
+      paymentInfoId: state.paymentInfoId,
       termsAndConditionsAccepted: true,
-      // Include other fields as needed, e.g., couponCode
     };
 
     this.store.apiProcedure(
       'placeOrder',
-      this.orderApi.placeOrder(orderData), // returns Observable<Order>
+      this.orderApi.placeOrder(orderData),
       (orderResponse, state) => ({
         orderId: orderResponse.id,
-        // Optionally, update other state properties
       }),
       (err, state) => ({
         error: `Failed to place order: ${err.message}` as string | null

@@ -14,12 +14,7 @@ export class CartApiService {
   }
 
   addCoupon(couponCode: string): Observable<Order> {
-    // According to the docs, you send `couponCode` as query param or in request body
-    // The swagger doc suggests using "query" parameter. The example:
-    // POST /api/Cart/coupon?couponCode=MyCoupon20
-    // If it's a query param, do:
-    // return this.http.post<Cart>(`${this.baseUrl}/coupon?couponCode=${couponCode}`, {});
-    // If it's in the request body, do:
-    return this.http.post<Order>(`${this.baseUrl}/coupon`, { couponCode });
+
+    return this.http.post<Order>(`${this.baseUrl}/coupon?couponCode=${couponCode}`, {});
   }
 }

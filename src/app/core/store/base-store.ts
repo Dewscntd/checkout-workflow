@@ -1,10 +1,9 @@
-// src/app/core/store/base-store.ts
 import { BehaviorSubject, Subject, Observable } from 'rxjs';
 import { scan, shareReplay } from 'rxjs/operators';
 
 export interface BaseState {
   loading: Record<string, boolean>;
-  error: string | null; // Required and nullable
+  error: string | null;
 }
 
 type StateUpdater<T> = (state: T) => Partial<T>;
@@ -22,8 +21,6 @@ export abstract class BaseStore<T extends BaseState> {
       scan((state, updater) => ({ ...state, ...updater(state) }), initialState),
       shareReplay({ bufferSize: 1, refCount: true })
     );
-
-    // Subscribe to state$ to keep stateSubject updated
     this.state$.subscribe((newState) => this.stateSubject.next(newState));
   }
 
@@ -45,10 +42,9 @@ public apiProcedure<R>(
   onSuccess: (result: R, state: T) => Partial<T>,
   onError?: (error: Error, state: T) => Partial<T>
 ): void {
-  // Use a function updater with type assertion
   this.updateState((state: T): Partial<T> => ({
     loading: { ...state.loading, [key]: true },
-    error: null, // Explicitly set to null
+    error: null,
   }) as Partial<T>);
 
   procedure.subscribe({
@@ -58,7 +54,7 @@ public apiProcedure<R>(
         return { ...newState, loading: { ...state.loading, [key]: false } } as Partial<T>;
       });
     },
-    error: (err: Error) => { // Ensure 'err' is of type 'Error'
+    error: (err: Error) => {
       this.updateState((state: T): Partial<T> => {
         const newState = onError
           ? onError(err, state)

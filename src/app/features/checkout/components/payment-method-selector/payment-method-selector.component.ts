@@ -24,7 +24,6 @@ export class PaymentMethodSelectorComponent {
   selectedMethod: PaymentMethod | null = null;
 
   selectPaymentMethod(method: PaymentMethod): void {
-    console.log('PaymentMethodSelectorComponent: Payment Method Selected', method);
     this.paymentMethodSelected.emit({ method });
   }
 }

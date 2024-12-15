@@ -77,8 +77,7 @@ export class WizardComponent implements AfterViewInit, OnDestroy {
   }
 
   onOrderPlaced(): void {
-    console.log('WizardComponent: Order Placed, navigating to Confirmation step');
-    this.next(); // Navigate to the next step (Confirmation)
+    this.next();
   }
 
   ngOnDestroy(): void {

@@ -9,6 +9,6 @@ export class PurchaseOrderStrategy implements PaymentStrategy {
   constructor() {}
 
   select(extraData?: any): Observable<void> {
-    return of(undefined); // Placeholder
+    return of(undefined);
   }
 }

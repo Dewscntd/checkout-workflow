@@ -55,12 +55,11 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [NzButtonModule, NzFormModule, NzInputModule, CommonModule, ReactiveFormsModule],
   styles: [`
-    /* Add your styles here if necessary */
   `]
 })
 export class AddCreditCardComponent {
   @Output() add = new EventEmitter<AddCreditCardDto>();
-  @Output() cancelSelection = new EventEmitter<void>(); // Added Output
+  @Output() cancelSelection = new EventEmitter<void>(); 
 
   creditCardForm: FormGroup;
 
@@ -90,6 +89,6 @@ export class AddCreditCardComponent {
   }
 
   cancel(): void {
-    this.cancelSelection.emit(); // Emit the cancel event
+    this.cancelSelection.emit();
   }
 }

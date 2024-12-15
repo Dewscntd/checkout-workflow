@@ -18,7 +18,6 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 })
 export class SuccessStepComponent {
   goToHome(): void {
-    // Navigate to home page or another relevant page
     window.location.href = '/';
   }
 }

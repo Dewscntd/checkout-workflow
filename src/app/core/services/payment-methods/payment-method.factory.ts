@@ -1,4 +1,3 @@
-// src/app/core/services/payment-methods/payment-method.factory.ts
 import { Injectable } from '@angular/core';
 import { PaymentMethod } from '../../models/payment.types';
 import { PaymentStrategy } from './payment.strategy';
@@ -22,7 +21,6 @@ export class PaymentMethodFactory {
         return this.purchaseOrderStrategy;
       case PaymentMethod.PayPal:
         return this.payPalStrategy;
-      // Add other cases as needed
       default:
         console.warn(`Payment method ${method} is not supported.`);
         return null;

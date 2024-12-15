@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../../../../environment/environment';
 
 @Injectable({ providedIn: 'root' })
 export class OrderApiService {
-  private endpoint = `${this.baseUrl}/api/Order`; // Append /api/Order
+  private endpoint = `${this.baseUrl}/api/Order`;
 
   constructor(
     @Inject(API_BASE_URL) private baseUrl: string,

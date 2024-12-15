@@ -11,7 +11,7 @@ export class PayPalStrategy implements PaymentStrategy {
 
   select(data: { paypalAccountId: string }): Observable<void> {
     return this.paymentApi.selectPayPalAccount(data.paypalAccountId).pipe(
-      map(() => undefined) // Convert to Observable<void>
+      map(() => undefined)
     );
   }
 }

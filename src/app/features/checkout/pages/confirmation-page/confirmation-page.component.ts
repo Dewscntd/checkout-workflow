@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy } from '@angular/core';
 import { CheckoutFacadeService } from '../../services/checkout-facade.service';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
@@ -10,16 +10,10 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-confirmation-page',
   template: `
-    <div *ngIf="(loading$ | async) as loading">
-      <nz-spin nzTip="Processing your order..." [nzSpinning]="loading">
-        <div *ngIf="!loading">
           <h2>Order Confirmation</h2>
           <nz-alert nzType="success" nzMessage="Your order has been placed successfully!" nzShowIcon></nz-alert>
-          <p>Your Order ID: {{ orderId }}</p>
-          <!-- Additional confirmation details can be added here -->
-        </div>
-      </nz-spin>
-    </div>
+          <p *ngIf="orderId$ | async as orderId">Your Order ID: {{ orderId }}</p>
+          <p *ngIf="!(orderId$ | async)">Your Order ID is being generated. Please wait...</p>
 
     <div *ngIf="(error$ | async) as error">
       <nz-alert nzType="error" [nzMessage]="error" nzShowIcon></nz-alert>
@@ -35,23 +29,23 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class ConfirmationPageComponent implements OnInit, OnDestroy {
-  @Input() orderId: string | null = null; // Receive orderId from the wizard
-
+  orderId$: Observable<string | null>;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
 
   private destroy$ = new Subject<void>();
 
   constructor(private facade: CheckoutFacadeService) {
-    // Map the loading state specifically for 'placeOrder'
     this.loading$ = this.facade.loading$.pipe(
       map(loading => loading['placeOrder'] || false)
     );
     this.error$ = this.facade.error$;
+    this.orderId$ = this.facade.orderId$;
   }
 
   ngOnInit(): void {
-    // Optionally, perform additional actions based on orderId
+    this.orderId$.pipe(takeUntil(this.destroy$)).subscribe(orderId => {
+    });
   }
 
   ngOnDestroy(): void {
