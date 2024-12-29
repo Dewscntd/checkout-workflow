@@ -4,21 +4,20 @@ import { PaymentStrategy } from './payment.strategy';
 import { CreditCardStrategy } from './credit-card-method';
 import { PurchaseOrderStrategy } from './purchase-order-method';
 import { PayPalStrategy } from './paypal-method';
-
 @Injectable({ providedIn: 'root' })
 export class PaymentMethodFactory {
   constructor(
-    private creditCardStrategy: CreditCardStrategy,
     private purchaseOrderStrategy: PurchaseOrderStrategy,
+    private creditCardStrategy: CreditCardStrategy,
     private payPalStrategy: PayPalStrategy
   ) {}
 
   create(method: PaymentMethod): PaymentStrategy | null {
     switch (method) {
-      case PaymentMethod.CreditCard:
-        return this.creditCardStrategy;
       case PaymentMethod.PurchaseOrder:
         return this.purchaseOrderStrategy;
+      case PaymentMethod.CreditCard:
+        return this.creditCardStrategy;
       case PaymentMethod.PayPal:
         return this.payPalStrategy;
       default:

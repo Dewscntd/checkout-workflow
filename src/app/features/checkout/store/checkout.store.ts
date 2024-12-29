@@ -14,7 +14,7 @@ export class CheckoutStore extends BaseStore<CheckoutState> {
       orderId: null,
       selectedAddressId: null,
       selectedPaymentMethod: null,
-      paymentInfoId: null, 
+      paymentInfoId: undefined,
       addresses: [],
       creditCards: [],
       paymentOptions: [],
@@ -45,7 +45,7 @@ export class CheckoutStore extends BaseStore<CheckoutState> {
     this.updateState({ addresses });
   }
 
-  setPaymentInfoId(paymentInfoId: string | null): void {
+  setPaymentInfoId(paymentInfoId: string): void {
     this.updateState({ paymentInfoId });
   }
 

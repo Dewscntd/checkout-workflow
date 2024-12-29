@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { API_BASE_URL } from '../../../../environment/environment';
 import { AddCreditCardDto, CreditCard, PayPalAccount } from '../../models/payment.types';
 
@@ -37,7 +37,11 @@ export class PaymentApiService {
   }
 
   selectPurchaseOrder(purchaseOrderNumber: string): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/api/Payment/purchase-order/${purchaseOrderNumber}`, {});
+    if (!purchaseOrderNumber) {
+      console.error('Attempted to select Purchase Order with undefined or empty PO number.');
+      return throwError(new Error('Invalid Purchase Order Number.'));
+    }
+    return this.http.put<void>(`${this.baseUrl}/api/Payment/purchase-order/${encodeURIComponent(purchaseOrderNumber)}`, {});
   }
 
   // PayPal APIs

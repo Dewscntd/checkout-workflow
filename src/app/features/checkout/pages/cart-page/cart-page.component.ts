@@ -11,7 +11,6 @@ import { CouponFormControls } from '../../../../core/models/cart.types';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-
 @Component({
   selector: 'app-cart-page',
   template: `
@@ -138,7 +137,6 @@ export class CartPageComponent implements OnInit, OnDestroy {
     ).subscribe(order => {
       if (order?.appliedCouponCode) {
         this.successMessage = `Coupon "${order.appliedCouponCode}" applied successfully!`;
-        console.log(`CartPageComponent: Coupon "${order.appliedCouponCode}" applied.`);
       } else {
         this.successMessage = null;
       }
@@ -149,6 +147,7 @@ export class CartPageComponent implements OnInit, OnDestroy {
   applyCoupon() {
     if (this.couponForm.valid) {
       const { couponCode } = this.couponForm.getRawValue();
+
       this.facade.applyCoupon(couponCode);
       this.couponForm.reset();
     }

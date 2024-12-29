@@ -1,14 +1,14 @@
 import { Address } from "./address.types";
+import { PaymentMethod } from "./payment.types";
   
-  export interface PlaceOrderDto {
-    cartId: string;
-    addressId: string;
-    paymentMethod: string;
-    paymentInfoId?: string;
-    purchaseOrderNumber?: string;
-    couponCode?: string;
-    termsAndConditionsAccepted: boolean;
-  }
+export interface PlaceOrderDto {
+  cartId: string;
+  addressId: string;
+  paymentMethod: PaymentMethod;
+  paymentInfoId?: string;
+  purchaseOrderNumber?: string;
+  termsAndConditionsAccepted: boolean;
+}
 
   export interface Product {
     name: string;

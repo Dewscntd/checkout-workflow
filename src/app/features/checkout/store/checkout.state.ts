@@ -8,8 +8,8 @@ export interface CheckoutState {
   orderId: string | null;
   selectedAddressId: string | null;
   selectedPaymentMethod: PaymentMethod | null;
-  paymentInfoId: string | null;
   addresses: Address[];
   creditCards: CreditCard[];
   paymentOptions: PaymentMethod[]; 
+  paymentInfoId?: string;
 }

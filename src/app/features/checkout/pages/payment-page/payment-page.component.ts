@@ -12,12 +12,14 @@ import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, Output, EventEmi
 import { CreditCardListComponent } from '../../components/credit-card-list/credit-card-list.component';
 import { PaymentMethodSelectorComponent } from '../../components/payment-method-selector/payment-method-selector.component';
 import { CheckoutFacadeService } from '../../services/checkout-facade.service';
+import { FormsModule } from '@angular/forms';
+import { NzFormModule } from 'ng-zorro-antd/form';
 
 @Component({
   selector: 'app-payment-page',
   template: `
     <h2>{{ title }}</h2>
-    
+
     <div *ngIf="(error$ | async) as error" class="error">
       <nz-alert nzType="error" [nzMessage]="error"></nz-alert>
     </div>
@@ -28,7 +30,7 @@ import { CheckoutFacadeService } from '../../services/checkout-facade.service';
         (paymentMethodSelected)="onPaymentMethodSelected($event)">
       </app-payment-method-selector>
     </div>
-
+    
     <div *ngIf="selectedMethod === paymentMethodEnum.CreditCard" class="credit-card-section">
       <h3>Saved Credit Cards</h3>
       <nz-spin [nzSpinning]="(loading$ | async)?.['getCreditCards']">
@@ -42,7 +44,24 @@ import { CheckoutFacadeService } from '../../services/checkout-facade.service';
         Add New Credit Card
       </button>
     </div>
-
+    
+    <div *ngIf="selectedMethod === paymentMethodEnum.PurchaseOrder" class="purchase-order-section">
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzFor="poNumber">PO Number</nz-form-label>
+        <nz-form-control [nzSpan]="14" nzErrorTip="Please input your PO number!">
+          <input 
+            nz-input 
+            id="poNumber" 
+            type="text" 
+            name="poNumber"
+            [(ngModel)]="poNumber" 
+            (ngModelChange)="onPONumberChange($event)"
+            required
+            placeholder="Enter Purchase Order Number" />
+        </nz-form-control>
+      </nz-form-item>  
+    </div>
+    
     <button 
       nz-button 
       nzType="primary" 
@@ -66,12 +85,14 @@ import { CheckoutFacadeService } from '../../services/checkout-facade.service';
     NzModalModule,
     NzMessageModule,
     CommonModule,
+    NzFormModule,
+    FormsModule
   ],
   styles: [`
     .error {
       margin-bottom: 16px;
     }
-    .credit-card-section {
+    .credit-card-section, .purchase-order-section {
       margin-top: 24px;
     }
     .add-card-button {
@@ -83,57 +104,86 @@ import { CheckoutFacadeService } from '../../services/checkout-facade.service';
   `]
 })
 export class PaymentPageComponent implements OnInit, OnDestroy {
+  @Output() orderPlaced = new EventEmitter<void>();
+
   title = 'Payment';
   paymentMethodEnum = PaymentMethod; 
+  poNumber: string = '';
 
-  error$ = this.facade.error$;
-  paymentOptions$ = this.facade.paymentOptions$;
-  creditCards$ = this.facade.creditCards$;
-  loading$ = this.facade.loading$;
+  error$: Observable<string | null>;
+  paymentOptions$: Observable<PaymentMethod[]>;
+  creditCards$: Observable<CreditCard[]>;
+  loading$: Observable<Record<string, boolean>>;
   selectedMethod: PaymentMethod | null = null;
 
+  canPlaceOrder$!: Observable<boolean>;
+
   private destroy$ = new Subject<void>();
-
-  canPlaceOrder$: Observable<boolean> = combineLatest([
-    this.facade.order$,
-    this.facade.selectedAddressId$,
-    this.facade.selectedPaymentMethod$
-  ]).pipe(
-    map(([order, addressId, paymentMethod]) => !!(order && addressId && paymentMethod))
-  );
-
-  @Output() orderPlaced = new EventEmitter<void>();
 
   constructor(
     private facade: CheckoutFacadeService,
     private modal: NzModalService,
-    private message: NzMessageService
-  ) {}
+    private message: NzMessageService,
+  ) {
 
-  ngOnInit(): void {
-    this.facade.loadOrderData();
-    this.facade.loadAddresses();
+    this.error$ = this.facade.error$;
+    this.paymentOptions$ = this.facade.paymentOptions$;
+    this.creditCards$ = this.facade.creditCards$;
+    this.loading$ = this.facade.loading$;
+  }
+
+  ngOnInit(): void {    
     this.facade.loadPaymentOptions();
 
-    this.facade.getCreditCards().pipe(takeUntil(this.destroy$)).subscribe(cards => {
-    });
-
-    this.paymentOptions$.subscribe(options => {
-    });
-
-    this.error$.subscribe(error => {
-      if (error) {
-      }
-    });
+    this.canPlaceOrder$ = combineLatest([
+      this.facade.order$,
+      this.facade.selectedAddressId$,
+      this.facade.selectedPaymentMethod$,
+      this.facade.purchaseOrderNumber$,
+      this.facade.paymentInfoId$
+    ]).pipe(
+      map(([order, addressId, paymentMethod, poNumber, paymentInfoId]) => {
+        console.log('canPlaceOrder$ values:', {
+          order,
+          addressId,
+          paymentMethod,
+          poNumber,
+          paymentInfoId
+        });
+    
+        if (!order || !addressId || !paymentMethod) return false;
+    
+        if (paymentMethod === PaymentMethod.PurchaseOrder) {
+          return !!poNumber && poNumber.trim().length > 0;
+        }
+    
+        if (paymentMethod === PaymentMethod.CreditCard) {
+          return !!paymentInfoId && paymentInfoId.trim().length > 0;
+        }
+    
+        return false;
+      })
+    );
+    
   }
+
+  onPONumberChange(value: string): void {
+    this.poNumber = value;
+    this.facade.setPurchaseOrderNumber(value);
+  }
+
 
   onPaymentMethodSelected(event: { method: PaymentMethod; data?: any }) {
     const method = event.method;
-    this.selectedMethod = method;
 
-    if (method === PaymentMethod.CreditCard) {
+    this.selectedMethod = method;
+    this.facade.choosePaymentMethod(method, undefined);
+
+    if (method === PaymentMethod.PurchaseOrder) {
+      this.message.info('Please enter your Purchase Order Number.');
+    } else if (method === PaymentMethod.CreditCard) {
+      this.message.info('Please select a saved credit card.');
     } else {
-      this.facade.choosePaymentMethod(method, undefined);
       this.message.success(`Payment method ${method} selected.`);
     }
   }
@@ -179,9 +229,29 @@ export class PaymentPageComponent implements OnInit, OnDestroy {
   }
 
   placeOrder(): void {
+    if (this.selectedMethod === PaymentMethod.PurchaseOrder && !this.poNumber.trim()) {
+      this.message.error('Please enter a valid Purchase Order Number.');
+      return;
+    }
+  
     this.facade.placeOrder();
-    this.message.success('Order placed successfully.');
-    this.orderPlaced.emit();
+    
+    this.facade.orderId$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(orderId => {
+      if (orderId) {
+        this.message.success('Order placed successfully.');
+        this.orderPlaced.emit();
+      }
+    });
+
+    this.facade.error$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(error => {
+      if (error) {
+        this.message.error(error);
+      }
+    });
   }
 
   ngOnDestroy(): void {

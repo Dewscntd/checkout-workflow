@@ -5,8 +5,8 @@ import { AddressApiService } from '../../../core/services/api/address-api.servic
 import { CartApiService } from '../../../core/services/api/cart-api.service';
 import { OrderApiService } from '../../../core/services/api/order-api.service';
 import { PaymentMethodFactory } from '../../../core/services/payment-methods/payment-method.factory';
-import { Observable, of } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { BehaviorSubject, combineLatest, Observable, of, throwError } from 'rxjs';
+import { map, catchError, tap, take } from 'rxjs/operators';
 import { Address } from '../../../core/models/address.types';
 import { Order, PlaceOrderDto } from '../../../core/models/order.types';
 import { CreditCard, AddCreditCardDto } from '../../../core/models/payment.types';
@@ -15,13 +15,16 @@ import { PaymentMethod } from '../../../core/models/payment.types';
 
 @Injectable({ providedIn: 'root' })
 export class CheckoutFacadeService {
+  private purchaseOrderNumberSubject = new BehaviorSubject<string | null>(null);
+  purchaseOrderNumber$ = this.purchaseOrderNumberSubject.asObservable();
+
   order$: Observable<Order | null> = this.store.state$.pipe(map(state => state.order));
   loading$: Observable<Record<string, boolean>> = this.store.state$.pipe(map(state => state.loading));
   error$: Observable<string | null> = this.store.state$.pipe(map(state => state.error));
   orderId$: Observable<string | null> = this.store.state$.pipe(map(state => state.orderId));
   selectedAddressId$: Observable<string | null> = this.store.state$.pipe(map(state => state.selectedAddressId));
   selectedPaymentMethod$: Observable<PaymentMethod | null> = this.store.state$.pipe(map(state => state.selectedPaymentMethod));
-  paymentInfoId$: Observable<string | null> = this.store.state$.pipe(map(state => state.paymentInfoId));
+  paymentInfoId$: Observable<string | undefined> = this.store.state$.pipe(map(state => state.paymentInfoId));
   creditCards$: Observable<CreditCard[]> = this.store.state$.pipe(map(state => state.creditCards));
   addresses$: Observable<Address[]> = this.store.state$.pipe(map(state => state.addresses));
   paymentOptions$: Observable<PaymentMethod[]> = this.store.state$.pipe(
@@ -43,7 +46,6 @@ export class CheckoutFacadeService {
     private orderApi: OrderApiService,
     private paymentMethodFactory: PaymentMethodFactory
   ) {}
-
 
   loadPaymentOptions(): void {
     this.store.apiProcedure(
@@ -72,6 +74,10 @@ export class CheckoutFacadeService {
         console.warn(`Unknown payment method received: ${option}`);
         return undefined;
     }
+  }
+
+  setPurchaseOrderNumber(poNumber: string | null): void {
+    this.purchaseOrderNumberSubject.next(poNumber);
   }
 
   loadOrderData(): void {
@@ -153,24 +159,24 @@ export class CheckoutFacadeService {
     );
   }
 
-  choosePaymentMethod(method: PaymentMethod, extraData?: any): void {
-    const strategy: PaymentStrategy | null = this.paymentMethodFactory.create(method);
-    if (!strategy) {
-      this.store.setError(`Payment method ${method} not supported.` as string );
-      return;
-    }
-
-    this.store.apiProcedure(
-      'selectPaymentMethod',
-      strategy.select(extraData),
-      () => ({
-        selectedPaymentMethod: method
-      }),
-      (err, state) => ({
-        error: `Failed to select payment method: ${err.message}` as string | null
-      })
-    );
+choosePaymentMethod(method: PaymentMethod, extraData?: any): void {
+  const strategy = this.paymentMethodFactory.create(method);
+  if (!strategy) {
+    this.store.setError(`Payment method ${method} not supported.`);
+    return;
   }
+
+  this.store.apiProcedure(
+    'selectPaymentMethod',
+    strategy.select(extraData),
+    () => ({
+      selectedPaymentMethod: method
+    }),
+    (err, state) => ({
+      error: `Failed to select payment method: ${err.message}` as string | null
+    })
+  );
+}
 
   loadAddresses(): void {
     this.store.apiProcedure(
@@ -216,34 +222,76 @@ export class CheckoutFacadeService {
   }
 
   placeOrder(): void {
-    const state = this.store.currentState;
-    if (
-      !state.order ||
-      !state.selectedAddressId ||
-      !state.selectedPaymentMethod ||
-      !state.paymentInfoId
-    ) {
-      this.store.setError('Missing required order details.' as string );
-      return;
-    }
+    combineLatest([
+      this.store.state$,
+      this.purchaseOrderNumber$
+    ])
+    .pipe(take(1))
+    .subscribe(([state, purchaseOrderNumber]) => {
 
-    const orderData: PlaceOrderDto = {
-      cartId: state.order.id,
-      addressId: state.selectedAddressId,
-      paymentMethod: state.selectedPaymentMethod,
-      paymentInfoId: state.paymentInfoId,
-      termsAndConditionsAccepted: true,
-    };
+      if (
+        !state.order ||
+        !state.selectedAddressId ||
+        !state.selectedPaymentMethod ||
+        (!state.paymentInfoId && state.selectedPaymentMethod !== PaymentMethod.PurchaseOrder)
+      ) {
+        this.store.setError('Missing required order details.');
+        return;
+      }
 
-    this.store.apiProcedure(
-      'placeOrder',
-      this.orderApi.placeOrder(orderData),
-      (orderResponse, state) => ({
-        orderId: orderResponse.id,
-      }),
-      (err, state) => ({
-        error: `Failed to place order: ${err.message}` as string | null
-      })
-    );
+      const orderData: PlaceOrderDto = {
+        cartId: state.order.id,
+        addressId: state.selectedAddressId,
+        paymentMethod: state.selectedPaymentMethod,
+        termsAndConditionsAccepted: true,
+      };
+
+      if (state.selectedPaymentMethod === PaymentMethod.CreditCard) {
+        orderData.paymentInfoId = state.paymentInfoId;
+      } else if (state.selectedPaymentMethod === PaymentMethod.PurchaseOrder) {
+        if (!purchaseOrderNumber || !purchaseOrderNumber.trim()) {
+          this.store.setError('Purchase Order Number is required.');
+          return;
+        }
+        orderData.purchaseOrderNumber = purchaseOrderNumber;
+
+        this.paymentApi.selectPurchaseOrder(purchaseOrderNumber).pipe(
+          catchError(err => {
+            console.error('Failed to select Purchase Order:', err);
+            this.store.setError('Failed to select Purchase Order.');
+            return throwError(err);
+          })
+        ).subscribe({
+          next: () => {
+            console.log('Purchase Order Selected Successfully');
+            this.store.apiProcedure(
+              'placeOrder',
+              this.orderApi.placeOrder(orderData),
+              (orderResponse, state) => ({
+                orderId: orderResponse.id,
+              }),
+              (err, state) => ({
+                error: `Failed to place order: ${err.message}` as string | null
+              })
+            );
+          },
+          error: () => {
+          }
+        });
+
+        return;
+      }
+
+      this.store.apiProcedure(
+        'placeOrder',
+        this.orderApi.placeOrder(orderData),
+        (orderResponse, state) => ({
+          orderId: orderResponse.id,
+        }),
+        (err, state) => ({
+          error: `Failed to place order: ${err.message}` as string | null
+        })
+      );
+    });
   }
 }
